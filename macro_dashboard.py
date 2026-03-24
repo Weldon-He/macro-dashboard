@@ -6,12 +6,20 @@ Created on Sun Mar 22 14:02:54 2026
 """
 
 import streamlit as st
-from openbb import obb
 import os
+
+# 设置 OpenBB 数据目录到当前目录（有写入权限）
+os.environ["OPENBB_USER_DATA_DIRECTORY"] = os.path.join(os.getcwd(), "openbb_data")
+os.environ["OPENBB_AUTO_BUILD"] = "false"
+
+from openbb import obb
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# 确保目录存在
+os.makedirs(os.environ["OPENBB_USER_DATA_DIRECTORY"], exist_ok=True)
 
 # ====================== 基础配置 ======================
 st.set_page_config(page_title="宏观指标监控仪表盘", layout="wide")
