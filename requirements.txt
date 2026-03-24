@@ -1,5 +1,5 @@
 streamlit
-openbb==4.0.0
+openbb==3.0.0
 pandas
 numpy
 plotly
