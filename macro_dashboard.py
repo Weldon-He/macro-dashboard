@@ -1,35 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-宏观指标监控仪表盘
+Created on Sun Mar 22 14:02:54 2026
+
+@author: AAA20
 """
 
 import streamlit as st
+from openbb import obb
 import os
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# ====================== 依赖检查与导入 ======================
-try:
-    from openbb import obb
-    OPENBB_AVAILABLE = True
-except ImportError:
-    OPENBB_AVAILABLE = False
-    st.error("❌ 未安装 openbb 库！请先运行 `pip install openbb` 安装")
-
 # ====================== 基础配置 ======================
 st.set_page_config(page_title="宏观指标监控仪表盘", layout="wide")
 
 # ====================== 读取FRED Key ======================
-if OPENBB_AVAILABLE:
-    fred_api_key = os.getenv("FRED_API_KEY")
-    if not fred_api_key:
-        st.error("❌ 未读取到FRED API Key！请先配置环境变量并重启")
-        st.stop()
-    obb.user.credentials.fred_api_key = fred_api_key
-else:
+fred_api_key = os.getenv("FRED_API_KEY")
+if not fred_api_key:
+    st.error("❌ 未读取到FRED API Key！请先配置环境变量并重启")
     st.stop()
+obb.user.credentials.fred_api_key = fred_api_key
 
 # ====================== 定义指标 ======================
 INDICATORS = {
@@ -49,30 +41,26 @@ def get_macro_data():
     data_dict = {}
     # 先拉取全量数据（2018至今）
     for code, cfg in INDICATORS.items():
-        try:
-            df = obb.economy.fred_series(
-                symbol=code,
-                start_date="2018-01-01",
-                api_key=fred_api_key
-            ).to_df()
-            
-            # 适配列名
-            if "value" in df.columns:
-                df.rename(columns={"value": cfg["name"]}, inplace=True)
-            elif code not in df.columns and len(df.columns) >= 1:
-                df.rename(columns={df.columns[-1]: cfg["name"]}, inplace=True)
-            else:
-                df.rename(columns={code: cfg["name"]}, inplace=True)
-            
-            # 确保索引是日期格式
-            df.index = pd.to_datetime(df.index)
-            # 去空值并保留必要列
-            if cfg["name"] in df.columns:
-                data_dict[code] = df[[cfg["name"]]].dropna()
-            else:
-                data_dict[code] = pd.DataFrame()
-        except Exception as e:
-            st.warning(f"获取 {cfg['name']} 数据失败: {str(e)}")
+        df = obb.economy.fred_series(
+            symbol=code,
+            start_date="2018-01-01",
+            api_key=fred_api_key
+        ).to_df()
+        
+        # 适配列名
+        if "value" in df.columns:
+            df.rename(columns={"value": cfg["name"]}, inplace=True)
+        elif code not in df.columns and len(df.columns) >= 1:
+            df.rename(columns={df.columns[-1]: cfg["name"]}, inplace=True)
+        else:
+            df.rename(columns={code: cfg["name"]}, inplace=True)
+        
+        # 确保索引是日期格式
+        df.index = pd.to_datetime(df.index)
+        # 去空值并保留必要列
+        if cfg["name"] in df.columns:
+            data_dict[code] = df[[cfg["name"]]].dropna()
+        else:
             data_dict[code] = pd.DataFrame()
     return data_dict
 
